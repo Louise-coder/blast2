@@ -1,0 +1,8 @@
+name: blast2-env
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python
+  - biopython
