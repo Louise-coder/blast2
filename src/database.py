@@ -1,8 +1,9 @@
 """This module defines the `Database` class."""
 
 from Bio import SeqIO
+from collections import defaultdict
 import logging
-from typing import List
+from typing import Dict, List
 
 from sequence import Sequence
 
@@ -53,3 +54,24 @@ class Database:
             An iterator over the list of sequences.
         """
         return iter(self.records)
+
+    def get_index(self) -> Dict[str, Dict[int, List[int]]]:
+        """Create an index of k-mers from the sequences in the database.
+
+        Returns
+        -------
+        Dict[str, Dict[int, List[int]]]
+            A dictionnary mapping k-mers to their positions in the sequences.
+
+        Notes
+        -----
+        This index maps each k-mer to a dictionary where:
+        - The key is the sequence index in the database.
+        - The value is a list of positions where the k-mer appears in that sequence.
+        """
+        logger.info("Creating the index...")
+        index = defaultdict(lambda: defaultdict(list))
+        for i, record in enumerate(self.records):
+            for word, positions in record.words.items():
+                index[word][i].extend(positions)
+        return index
