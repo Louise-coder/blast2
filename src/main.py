@@ -9,7 +9,7 @@ Command-line Arguments:
 - -k, --k : (optional) Word length. The default value is 3.
 
 Example Usage:
-    python main.py -d path/to/db.fasta -q path/to/query.fasta -o output_file -e 0.01 -k 4
+    python main.py -d path/to/db.fasta -q path/to/query.fasta -o output_file -e 0.01 -k 4 -m pam250
 
 This will create an instance of `GappedBlast` with the provided parameters, attempt to load the data from the specified files, and run the BLAST process.
 """
@@ -75,6 +75,21 @@ def get_parameters() -> Namespace:
     )
     parser.add_argument(
         "-k", "--k", type=int, default=3, help="Word length."
+    )
+    parser.add_argument(
+        "-m",
+        "--matrix",
+        type=str,
+        choices=[
+            "blosum45",
+            "blosum62",
+            "blosum80",
+            "pam30",
+            "pam70",
+            "pam250",
+        ],
+        default="blosum62",
+        help="Choose the substitution matrix: blosum45, blosum62, blosum80, pam30, pam70 or pam250 (default: blosum62)",
     )
     return parser.parse_args()
 

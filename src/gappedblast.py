@@ -1,5 +1,6 @@
 """This module defines the `GappedBlast` class."""
 
+from Bio.Align import substitution_matrices
 import logging
 
 from database import Database
@@ -36,6 +37,7 @@ class GappedBlast:
         """
         self.output = params.output
         self.evalue = params.evalue
+        self.matrix = substitution_matrices.load(params.matrix.upper())
         self.k = params.k
         Sequence.set_word_length(self.k)
         self.db = None
