@@ -106,8 +106,9 @@ class Sequence(SeqRecord):
         all_words = defaultdict(list)
         for i in range(len(self.seq) - k + 1):
             word = str(self.seq[i : i + k])
+            word = word.replace("U", "C")
             all_words[word].append(i)
-        return dict(all_words)
+        return all_words
 
     @classmethod
     def set_word_length(cls, k: int):
