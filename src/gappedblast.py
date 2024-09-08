@@ -2,7 +2,10 @@
 
 from Bio.Align import substitution_matrices
 import logging
+from typing import Dict, List
 
+from constant import T
+from collections import defaultdict
 from database import Database
 from sequence import Sequence
 
@@ -75,6 +78,52 @@ class GappedBlast:
                         "\033[33mPlease re-enter the path to the query file: \033[0m"
                     )
 
+    def compute_alignment_score(self, word_a: str, word_b: str) -> float:
+        """Compute the alignment score between two words.
+
+        Parameters
+        ----------
+        word_a : str
+            The first word.
+        word_b : str
+            The second word.
+
+        Returns
+        -------
+        float
+            The alignment score between the two words.
+        """
+        score = 0
+        for aa_a, aa_b in zip(word_a, word_b):
+            score += self.matrix[aa_a, aa_b]
+        return score
+
+    def hits_detection(self) -> Dict[str, List[str]]:
+        """Detects hits between the query sequence and the database.
+
+        Returns
+        -------
+        Dict[str, List[str]]
+            Query k-mers are keys and matching database k-mers are values.
+
+        Notes
+        -----
+        A hit is detected if the alignment score is greater than `T`.
+        """
+        logger.info("Gapped-BLAST: Indexation...")
+        index = self.db.get_index()
+        logger.info("Gapped-BLAST: Searching hits...")
+        hits = defaultdict(list)
+        for q_word in self.query.words:
+            for db_word in index:
+                score = self.compute_alignment_score(q_word, db_word)
+                if score <= T:
+                    continue
+                hits[q_word].append(db_word)
+        return hits
+
     def run(self):
         """Execute the BLAST process."""
         self.load_data()
+        self.hits_detection()
+        # TODO: Implement hit extension and output generation
