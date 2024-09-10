@@ -41,7 +41,7 @@ def get_parameters() -> Namespace:
 
     Returns
     -------
-    argparse.Namespace
+    Namespace
         Object containing the command-line parameters.
     """
     parser = argparse.ArgumentParser(

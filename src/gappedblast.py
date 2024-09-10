@@ -17,6 +17,10 @@ class GappedBlast:
 
     Attributes
     ----------
+    query_fasta : str
+        Path to the FASTA file of the query.
+    db_fasta : str
+        Path to the FASTA file of the database.
     db : Database
         An instance of the `Database` class containing sequence records.
     query : Sequence
