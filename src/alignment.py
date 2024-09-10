@@ -59,3 +59,28 @@ class Alignment:
             msg += "Not computed yet.\n"
         return msg
 
+    @classmethod
+    def compute_ungapped_score(
+        cls,
+        peptide_a: str,
+        peptide_b: str,
+    ) -> float:
+        """Compute the alignment score between two peptides.
+
+        Parameters
+        ----------
+        peptide_a : str
+            The first kmer.
+        peptide_b : str
+            The second kmer.
+
+        Returns
+        -------
+        float
+            The alignment score between the two peptides.
+        """
+        score = 0
+        for aa_a, aa_b in zip(peptide_a, peptide_b):
+            score += cls.matrix[aa_a, aa_b]
+        return score
+

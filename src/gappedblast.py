@@ -4,6 +4,7 @@ from collections import defaultdict
 import logging
 from typing import List, Tuple
 
+from alignment import Alignment
 from config import Config
 from database import Database
 from sequence import Sequence
@@ -75,26 +76,6 @@ class GappedBlast:
                         "\033[33mPlease re-enter the path to the query file: \033[0m"
                     )
 
-    def compute_alignment_score(self, word_a: str, word_b: str) -> float:
-        """Compute the alignment score between two words.
-
-        Parameters
-        ----------
-        word_a : str
-            The first word.
-        word_b : str
-            The second word.
-
-        Returns
-        -------
-        float
-            The alignment score between the two words.
-        """
-        score = 0
-        for aa_a, aa_b in zip(word_a, word_b):
-            score += self.matrix[aa_a, aa_b]
-        return score
-
     def hits_detection(self) -> Dict[str, List[str]]:
         """Detects hits between the query sequence and the database.
 
@@ -113,7 +94,7 @@ class GappedBlast:
         hits = defaultdict(list)
         for q_word in self.query.words:
             for db_word, db_position in self.db.index.items():
-                score = self.compute_alignment_score(q_word, db_word)
+                score = Alignment.compute_ungapped_score(q_word, db_word)
                 if score <= Config.T:
                     continue
                 hits[q_word].append(db_word)
