@@ -96,7 +96,7 @@ class GappedBlast:
                 score = Alignment.compute_ungapped_score(q_word, db_word)
                 if score <= Config.T:
                     continue
-                for seq_id, seq_positions in db_position.items():
+                for seq_id, _ in db_position:
                     hits[seq_id].append((q_word, db_word))
         self.hits = hits
 
