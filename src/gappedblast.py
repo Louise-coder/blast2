@@ -1,11 +1,10 @@
 """This module defines the `GappedBlast` class."""
 
-from Bio.Align import substitution_matrices
-import logging
-from typing import Dict, List
-
-from constant import T
 from collections import defaultdict
+import logging
+from typing import List, Tuple
+
+from config import Config
 from database import Database
 from sequence import Sequence
 
@@ -24,12 +23,6 @@ class GappedBlast:
         An instance of the `Sequence` class representing the query sequence.
     output : str
         Path to the output file.
-    evalue : float
-        E-value threshold for BLAST.
-    k : int
-        Length of the word for BLAST.
-    matrix : substitution_matrices.MatrixInfo
-        Chosen substitution matrix for scoring alignments.
     """
 
     def __init__(self, params):
@@ -43,12 +36,12 @@ class GappedBlast:
         self.db_fasta = params.db
         self.query_fasta = params.query
         self.output = params.output
-        self.evalue = params.evalue
-        self.matrix = substitution_matrices.load(params.matrix.upper())
-        self.k = params.k
-        Sequence.set_word_length(self.k)
-        self.db = None
-        self.query = None
+        if params.k != 3:
+            Config.update_param("K", params.k)
+        if params.matrix != "blosum62":
+            Config.update_param("MATRIX", params.matrix.upper())
+        if params.evalue != 0.001:
+            Config.update_param("EVALUE", params.evalue)
 
     def load_data(self):
         """Load data from the provided FASTA files.
@@ -117,7 +110,7 @@ class GappedBlast:
         for q_word in self.query.words:
             for db_word in index:
                 score = self.compute_alignment_score(q_word, db_word)
-                if score <= T:
+                if score <= Config.T:
                     continue
                 hits[q_word].append(db_word)
         return hits
