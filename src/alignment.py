@@ -1,6 +1,6 @@
 """This module defines the `Alignment` class."""
 
-from Bio.Align import substitution_matrices
+from typing import Dict, List, Self, Tuple
 
 from config import Config
 
@@ -10,8 +10,6 @@ class Alignment:
 
     Attributes
     ----------
-    matrix : substitution_matrices
-        The substitution matrix used for scoring the alignment.
     seq_a : str
         The first sequence.
     seq_b : str
@@ -23,8 +21,6 @@ class Alignment:
     len : int
         The length of the alignment.
     """
-
-    matrix = substitution_matrices.load(Config.MATRIX)
 
     def __init__(
         self,
@@ -59,9 +55,8 @@ class Alignment:
             msg += "Not computed yet.\n"
         return msg
 
-    @classmethod
+    @staticmethod
     def compute_ungapped_score(
-        cls,
         peptide_a: str,
         peptide_b: str,
     ) -> float:
@@ -81,6 +76,6 @@ class Alignment:
         """
         score = 0
         for aa_a, aa_b in zip(peptide_a, peptide_b):
-            score += cls.matrix[aa_a, aa_b]
+            score += Config.get_matrix_score(aa_a, aa_b)
         return score
 

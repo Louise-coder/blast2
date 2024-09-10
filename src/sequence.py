@@ -104,6 +104,5 @@ class Sequence(SeqRecord):
         all_words = defaultdict(list)
         for i in range(len(self.seq) - k + 1):
             word = str(self.seq[i : i + k])
-            word = word.replace("U", "C")
             all_words[word].append(i)
         return all_words

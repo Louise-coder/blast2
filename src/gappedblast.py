@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 import logging
-from typing import List, Tuple
+from Bio.Align import substitution_matrices
 
 from alignment import Alignment
 from config import Config
@@ -46,7 +46,9 @@ class GappedBlast:
         if params.k != 3:
             Config.update_param("K", params.k)
         if params.matrix != "blosum62":
-            Config.update_param("MATRIX", params.matrix.upper())
+            Config.update_param(
+                "MATRIX", substitution_matrices.load(params.matrix.upper())
+            )
         if params.evalue != 0.001:
             Config.update_param("EVALUE", params.evalue)
 
