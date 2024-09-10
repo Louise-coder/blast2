@@ -3,11 +3,13 @@
 from collections import defaultdict
 import logging
 from Bio.Align import substitution_matrices
+from typing import List
 
 from alignment import Alignment
 from config import Config
 from database import Database
 from sequence import Sequence
+
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -101,8 +103,28 @@ class GappedBlast:
         self.hits = hits
 
     def ungapped_extension(self) -> List[Alignment]:
+        """Extend the hits without allowing for gaps.
+
+        Returns
+        -------
+        List[Alignment]
+            A list of HSP to extend with gaps.
+
+        Notes
+        -----
+        For each sequence in the database with detected hits, this method
+        extends the hits without allowing for gaps. The goal is to
+        determine the HSP that have the most potential for gapped extension.
+        """
         logger.info("Gapped-BLAST: Extending hits without gaps...")
-        # TODO: implement ungapped extension
+        alignments = []
+        for sequence_index, hits in self.hits.items():
+            q_record = self.query
+            db_record = self.db.records[sequence_index]
+            alignments += Alignment._extend_to_hsp(
+                q_record, db_record, hits
+            )
+        return alignments
 
     def gapped_extension(self, alignments: List[Alignment]):
         logger.info("Gapped-BLAST: Extending hits with gaps...")
