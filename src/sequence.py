@@ -6,6 +6,8 @@ from collections import defaultdict
 import logging
 from typing import List
 
+from config import Config
+
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -18,13 +20,9 @@ class Sequence(SeqRecord):
 
     Attributes
     ----------
-    k : int
-        The length of k-mers used in the sequence (default is 3).
     words : dict[str, List[int]]
         A dictionary where keys are k-mers and values are lists of positions.
     """
-
-    k = 3  # Default length of the k-mers
 
     def __init__(self, seq: str, id=None, name="", description=""):
         """Initialize a `Sequence` object.
@@ -98,7 +96,7 @@ class Sequence(SeqRecord):
         ValueError
             If `k` is greater than the length of the sequence.
         """
-        k = Sequence.k
+        k = Config.K
         if k > len(self.seq):
             raise ValueError(
                 "k cannot be greater than the length of the sequence."
@@ -106,23 +104,5 @@ class Sequence(SeqRecord):
         all_words = defaultdict(list)
         for i in range(len(self.seq) - k + 1):
             word = str(self.seq[i : i + k])
-            word = word.replace("U", "C")
             all_words[word].append(i)
         return all_words
-
-    @classmethod
-    def set_word_length(cls, k: int):
-        """Set the length of k-mers for the `Sequence` class.
-
-        Parameters
-        ----------
-        k : int
-            The length of the k-mers.
-        """
-        cls.k = k
-
-
-# if __name__ == "__main__":
-#     query = Sequence.from_fasta("data/p53_human.fasta")
-#     TEST = "GGACGGATTCCATGGATA"
-#     test = Sequence(seq=TEST)

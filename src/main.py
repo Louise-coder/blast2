@@ -5,13 +5,14 @@ Command-line Arguments:
 - -d, --db : (required) Path to the FASTA file containing the database.
 - -q, --query : (required) Path to the FASTA file containing the query sequence.
 - -o, --output : (optional) Path to the output file. The default value is "out".
-- -e, --evalue : (optional) E-value threshold. The default value is 0.001.
 - -k, --k : (optional) Word length. The default value is 3.
+- -m, --matrix : (optional) Substitution matrix to use for scoring alignments. The default value is "blosum62".
+- -e, --evalue : (optional) E-value threshold. The default value is 0.001.
 
 Example Usage:
-    python main.py -d path/to/db.fasta -q path/to/query.fasta -o output_file -e 0.01 -k 4 -m pam250
+    python main.py -d path/to/db.fasta -q path/to/query.fasta -o output_file -k 4 -m pam250 -e 0.01
 
-This will create an instance of `GappedBlast` with the provided parameters, attempt to load the data from the specified files, and run the BLAST process.
+This will create an instance of `GappedBlast` with the provided parameters.
 """
 
 import argparse
@@ -40,7 +41,7 @@ def get_parameters() -> Namespace:
 
     Returns
     -------
-    argparse.Namespace
+    Namespace
         Object containing the command-line parameters.
     """
     parser = argparse.ArgumentParser(

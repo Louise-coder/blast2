@@ -1,13 +1,15 @@
 """This module defines the `GappedBlast` class."""
 
-from Bio.Align import substitution_matrices
-import logging
-from typing import Dict, List
-
-from constant import T
 from collections import defaultdict
+import logging
+from Bio.Align import substitution_matrices
+from typing import List
+
+from alignment import Alignment
+from config import Config
 from database import Database
 from sequence import Sequence
+
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -18,18 +20,18 @@ class GappedBlast:
 
     Attributes
     ----------
+    query_fasta : str
+        Path to the FASTA file of the query.
+    db_fasta : str
+        Path to the FASTA file of the database.
     db : Database
         An instance of the `Database` class containing sequence records.
     query : Sequence
         An instance of the `Sequence` class representing the query sequence.
     output : str
         Path to the output file.
-    evalue : float
-        E-value threshold for BLAST.
-    k : int
-        Length of the word for BLAST.
-    matrix : substitution_matrices.MatrixInfo
-        Chosen substitution matrix for scoring alignments.
+    hits : Dict[str, List[Tuple[str, str]]]
+        A dictionary where each key is a sequence ID and the value is a list of hits.
     """
 
     def __init__(self, params):
@@ -43,12 +45,14 @@ class GappedBlast:
         self.db_fasta = params.db
         self.query_fasta = params.query
         self.output = params.output
-        self.evalue = params.evalue
-        self.matrix = substitution_matrices.load(params.matrix.upper())
-        self.k = params.k
-        Sequence.set_word_length(self.k)
-        self.db = None
-        self.query = None
+        if params.k != 3:
+            Config.update_param("K", params.k)
+        if params.matrix != "blosum62":
+            Config.update_param(
+                "MATRIX", substitution_matrices.load(params.matrix.upper())
+            )
+        if params.evalue != 0.001:
+            Config.update_param("EVALUE", params.evalue)
 
     def load_data(self):
         """Load data from the provided FASTA files.
@@ -78,52 +82,58 @@ class GappedBlast:
                         "\033[33mPlease re-enter the path to the query file: \033[0m"
                     )
 
-    def compute_alignment_score(self, word_a: str, word_b: str) -> float:
-        """Compute the alignment score between two words.
-
-        Parameters
-        ----------
-        word_a : str
-            The first word.
-        word_b : str
-            The second word.
-
-        Returns
-        -------
-        float
-            The alignment score between the two words.
-        """
-        score = 0
-        for aa_a, aa_b in zip(word_a, word_b):
-            score += self.matrix[aa_a, aa_b]
-        return score
-
-    def hits_detection(self) -> Dict[str, List[str]]:
+    def hits_detection(self):
         """Detects hits between the query sequence and the database.
-
-        Returns
-        -------
-        Dict[str, List[str]]
-            Query k-mers are keys and matching database k-mers are values.
 
         Notes
         -----
         A hit is detected if the alignment score is greater than `T`.
         """
         logger.info("Gapped-BLAST: Indexation...")
-        index = self.db.get_index()
+        self.db.load_index()
         logger.info("Gapped-BLAST: Searching hits...")
         hits = defaultdict(list)
         for q_word in self.query.words:
-            for db_word in index:
-                score = self.compute_alignment_score(q_word, db_word)
-                if score <= T:
+            for db_word, db_position in self.db.index.items():
+                score = Alignment.compute_ungapped_score(q_word, db_word)
+                if score <= Config.T:
                     continue
-                hits[q_word].append(db_word)
-        return hits
+                for seq_id, _ in db_position:
+                    hits[seq_id].append((q_word, db_word))
+        self.hits = hits
+
+    def ungapped_extension(self) -> List[Alignment]:
+        """Extend the hits without allowing for gaps.
+
+        Returns
+        -------
+        List[Alignment]
+            A list of HSP to extend with gaps.
+
+        Notes
+        -----
+        For each sequence in the database with detected hits, this method
+        extends the hits without allowing for gaps. The goal is to
+        determine the HSP that have the most potential for gapped extension.
+        """
+        logger.info("Gapped-BLAST: Extending hits without gaps...")
+        alignments = []
+        for sequence_index, hits in self.hits.items():
+            q_record = self.query
+            db_record = self.db.records[sequence_index]
+            alignments += Alignment._extend_to_hsp(
+                q_record, db_record, hits
+            )
+        return alignments
+
+    def gapped_extension(self, alignments: List[Alignment]):
+        logger.info("Gapped-BLAST: Extending hits with gaps...")
+        # TODO: implement gapped extension
 
     def run(self):
         """Execute the BLAST process."""
         self.load_data()
         self.hits_detection()
-        # TODO: Implement hit extension and output generation
+        alignments = self.ungapped_extension()
+        self.gapped_extension(alignments)
+        # TODO: output generation
