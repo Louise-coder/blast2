@@ -104,11 +104,11 @@ class GappedBlast:
         A hit is detected if the alignment score is greater than `T`.
         """
         logger.info("Gapped-BLAST: Indexation...")
-        index = self.db.get_index()
+        self.db.load_index()
         logger.info("Gapped-BLAST: Searching hits...")
         hits = defaultdict(list)
         for q_word in self.query.words:
-            for db_word in index:
+            for db_word, db_position in self.db.index.items():
                 score = self.compute_alignment_score(q_word, db_word)
                 if score <= Config.T:
                     continue
