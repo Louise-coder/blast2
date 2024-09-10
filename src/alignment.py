@@ -65,9 +65,9 @@ class Alignment:
         Parameters
         ----------
         peptide_a : str
-            The first kmer.
+            The first peptide.
         peptide_b : str
-            The second kmer.
+            The second peptide.
 
         Returns
         -------
