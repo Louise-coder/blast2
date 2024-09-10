@@ -98,8 +98,18 @@ class GappedBlast:
                     hits[seq_id].append((q_word, db_word))
         self.hits = hits
 
+    def ungapped_extension(self) -> List[Alignment]:
+        logger.info("Gapped-BLAST: Extending hits without gaps...")
+        # TODO: implement ungapped extension
+
+    def gapped_extension(self, alignments: List[Alignment]):
+        logger.info("Gapped-BLAST: Extending hits with gaps...")
+        # TODO: implement gapped extension
+
     def run(self):
         """Execute the BLAST process."""
         self.load_data()
         self.hits_detection()
-        # TODO: Implement hit extension and output generation
+        alignments = self.ungapped_extension()
+        self.gapped_extension(alignments)
+        # TODO: output generation
