@@ -128,7 +128,8 @@ class GappedBlast:
 
     def gapped_extension(self, alignments: List[Alignment]):
         logger.info("Gapped-BLAST: Extending hits with gaps...")
-        # TODO: implement gapped extension
+        for alignment in alignments:
+            seed = alignment.find_best_seed()
 
     def run(self):
         """Execute the BLAST process."""

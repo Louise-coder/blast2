@@ -239,3 +239,39 @@ class Alignment:
                             all_hsp.append(extended_hsp)
                     recent_hits[diagonal] = (q_pos, db_pos)
         return all_hsp
+
+    def find_best_seed(self) -> Tuple[int, int]:
+        """Find the best seed for gapped extension.
+
+        Returns
+        -------
+        Tuple[int, int]
+            A tuple containing the seed positions for the query and database.
+
+        Notes
+        -----
+        The seed is defined as the center of the best 11-ungapped alignment.
+        If the HSP is shorter than 11, the seed is the center of the HSP.
+        """
+        size = 11
+        q_seed = (2 * self.start_a + size) // 2
+        db_seed = (2 * self.start_b + size) // 2
+        if self.len < size:
+            size = self.len
+            return (q_seed, db_seed)
+        top_score = Alignment.compute_ungapped_score(
+            self.seq_a[self.start_a : self.start_a + size],
+            self.seq_b[self.start_b : self.start_b + size],
+        )
+        for i in range(1, self.len - size + 1):
+            a_start = self.start_a + i
+            b_start = self.start_b + i
+            current_score = Alignment.compute_ungapped_score(
+                self.seq_a[a_start : a_start + size],
+                self.seq_b[b_start : b_start + size],
+            )
+            if current_score > top_score:
+                top_score = current_score
+                q_seed = (2 * a_start + size) // 2
+                db_seed = (2 * b_start + size) // 2
+        return (q_seed, db_seed)
