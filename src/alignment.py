@@ -181,7 +181,7 @@ class Alignment:
         return top
 
     @classmethod
-    def _extend_to_hsp(
+    def extend_to_hsp(
         cls,
         q_record: Sequence,
         db_record: Sequence,

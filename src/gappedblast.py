@@ -121,7 +121,7 @@ class GappedBlast:
         for sequence_index, hits in self.hits.items():
             q_record = self.query
             db_record = self.db.records[sequence_index]
-            alignments += Alignment._extend_to_hsp(
+            alignments += Alignment.extend_to_hsp(
                 q_record, db_record, hits
             )
         return alignments
