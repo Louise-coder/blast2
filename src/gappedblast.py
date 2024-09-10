@@ -28,6 +28,8 @@ class GappedBlast:
         An instance of the `Sequence` class representing the query sequence.
     output : str
         Path to the output file.
+    hits : Dict[str, List[Tuple[str, str]]]
+        A dictionary where each key is a sequence ID and the value is a list of hits.
     """
 
     def __init__(self, params):
@@ -76,13 +78,8 @@ class GappedBlast:
                         "\033[33mPlease re-enter the path to the query file: \033[0m"
                     )
 
-    def hits_detection(self) -> Dict[str, List[str]]:
+    def hits_detection(self):
         """Detects hits between the query sequence and the database.
-
-        Returns
-        -------
-        Dict[str, List[str]]
-            Query k-mers are keys and matching database k-mers are values.
 
         Notes
         -----
@@ -97,8 +94,9 @@ class GappedBlast:
                 score = Alignment.compute_ungapped_score(q_word, db_word)
                 if score <= Config.T:
                     continue
-                hits[q_word].append(db_word)
-        return hits
+                for seq_id, seq_positions in db_position.items():
+                    hits[seq_id].append((q_word, db_word))
+        self.hits = hits
 
     def run(self):
         """Execute the BLAST process."""
