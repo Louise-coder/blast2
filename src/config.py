@@ -22,6 +22,10 @@ class Config:
         Lambda value used for normalizing scores in ungapped alignments.
     KU : float
         Kappa value used for normalizing scores in ungapped alignments.
+    LG : float
+        Lambda value used for normalizing scores in gapped alignments.
+    KG : float
+        Kappa value used for normalizing scores in gapped alignments.
     EVALUE : float
         E-value threshold for reporting significant alignments.
     """
@@ -30,11 +34,16 @@ class Config:
     MATRIX = substitution_matrices.load("BLOSUM62")
     K = 3
     T = 11
-    A = 10
+    A = 40
     SG = 22.0
-    LU = 0.3176
-    KU = 0.134
+    LU = 0.314
+    KU = 0.131
+    LG = 0.267
+    KG = 0.0410
     EVALUE = 0.001
+
+    GAP_OPENING_PENALTY = -11
+    GAP_EXTENSION_PENALTY = -1
 
     def __str__(cls):
         """Redefine __str__ to display the current configuration."""

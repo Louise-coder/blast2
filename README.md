@@ -29,4 +29,8 @@ conda env create -f environment.yml
 ```
 conda activate blast2-env
 ```
+2. Lancer blast2 sur la séquence de la protéine P53 humaine :
+```
+python src/main.py -d data/subset.fasta -q data/p53_human.fasta
+```
 

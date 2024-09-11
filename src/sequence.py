@@ -42,6 +42,7 @@ class Sequence(SeqRecord):
             seq=seq, id=id, name=name, description=description
         )
         self.words = self._get_words()
+        self.id = -1
 
     @classmethod
     def from_seqrecord(cls, seq_record: SeqRecord):

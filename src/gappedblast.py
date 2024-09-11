@@ -1,15 +1,16 @@
 """This module defines the `GappedBlast` class."""
 
+from Bio.Align import substitution_matrices
 from collections import defaultdict
 import logging
-from Bio.Align import substitution_matrices
+import multiprocessing
 from typing import List
 
-from alignment import Alignment
+
+from alignment import Alignment, worker_gapped_extension
 from config import Config
 from database import Database
 from sequence import Sequence
-
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -93,8 +94,13 @@ class GappedBlast:
         self.db.load_index()
         logger.info("Gapped-BLAST: Searching hits...")
         hits = defaultdict(list)
-        for q_word in self.query.words:
-            for db_word, db_position in self.db.index.items():
+        q_words = self.query.words
+        index = self.db.index
+        size = len(q_words)
+        for i, q_word in enumerate(q_words):
+            if i % 10 == 0 and i != 0:
+                logger.info(f"{i}/{size} query words processed...")
+            for db_word, db_position in index.items():
                 score = Alignment.compute_ungapped_score(q_word, db_word)
                 if score <= Config.T:
                     continue
@@ -119,21 +125,123 @@ class GappedBlast:
         logger.info("Gapped-BLAST: Extending hits without gaps...")
         alignments = []
         for sequence_index, hits in self.hits.items():
+            logger.info(f"Extending {sequence_index}/{len(self.hits)}")
             q_record = self.query
             db_record = self.db.records[sequence_index]
-            alignments += Alignment._extend_to_hsp(
+            db_record.id = sequence_index
+            alignments += Alignment.extend_to_hsp(
                 q_record, db_record, hits
             )
         return alignments
 
-    def gapped_extension(self, alignments: List[Alignment]):
+    def gapped_extension(
+        self, ungapped_alignments: List[Alignment]
+    ) -> List[Alignment]:
+        """Extend all the HSP previously found with gaps.
+
+        Parameters
+        ----------
+        ungapped_alignments : List[Alignment]
+            A list of HSP to extend with gaps.
+
+        Returns
+        -------
+        List[Alignment]
+            A list of HSP extended with gaps.
+
+        Notes
+        -----
+        For each HSP, this method extends the alignment with gaps in both:
+        - The forward direction.
+        - The backward direction.
+        """
         logger.info("Gapped-BLAST: Extending hits with gaps...")
-        # TODO: implement gapped extension
+        i = 0
+        gapped_alignments = []
+        for hsp in ungapped_alignments:
+            if i % 10 == 0 and i != 0:
+                logger.info(f"{i} alignments have been extended...")
+            seed = hsp.find_best_seed()
+            forward = Alignment(
+                hsp.seq_a[seed[0] :],
+                hsp.seq_b[seed[1] :],
+                0,
+                0,
+                1,
+            ).needleman_wunsch_local_alignment()
+            sub_a = hsp.seq_a[: seed[0] - 1]
+            sub_b = hsp.seq_b[: seed[1] - 1]
+            backward = Alignment(
+                sub_a[::-1],
+                sub_b[::-1],
+                0,
+                0,
+                1,
+            ).needleman_wunsch_local_alignment()
+            backward.seq_a = backward.seq_a[::-1]
+            backward.seq_b = backward.seq_b[::-1]
+            gapped_alignment = forward.merge(backward)
+            gapped_alignment.seq_id = hsp.seq_id
+            gapped_alignments.append(gapped_alignment)
+            i += 1
+        return gapped_alignments
+
+    def parallel_gapped_extension(
+        self, ungapped_alignments: List[Alignment]
+    ) -> List[Alignment]:
+        """Optimized version of gapped_extension() using multiprocessing.
+
+        Notes
+        -----
+        Each process is a worker that extends several HSP with gaps.
+
+        """
+        logger.info("Gapped-BLAST: Extending hits with gaps...")
+        workers = multiprocessing.Pool(None)
+        returned_alignments = [
+            workers.apply_async(func=worker_gapped_extension, args=[hsp])
+            for hsp in ungapped_alignments
+        ]
+        i = 0
+        all_alignments = []
+        size = len(ungapped_alignments)
+        for alignment in returned_alignments:
+            if i % 10 == 0 and i != 0:
+                logger.info(f"{i}/{size} alignments have been extended...")
+            all_alignments.append(alignment.get())
+            i += 1
+        workers.close()
+        workers.join()
+        return all_alignments
 
     def run(self):
         """Execute the BLAST process."""
         self.load_data()
         self.hits_detection()
-        alignments = self.ungapped_extension()
-        self.gapped_extension(alignments)
-        # TODO: output generation
+        ungapped_alignments = self.ungapped_extension()
+        gapped_alignments = self.parallel_gapped_extension(
+            ungapped_alignments
+        )
+
+    def run_with_time(self):
+        """Same as run but with time measurement for each step."""
+        import time
+
+        start = time.time()
+        self.load_data()
+        end = time.time()
+        print("Load_Data : ", end - start)
+        start = time.time()
+        self.hits_detection()
+        end = time.time()
+        print("Hits_detection : ", end - start)
+        start = time.time()
+        ungapped_alignments = self.ungapped_extension()
+        end = time.time()
+        print("Ungapped extension : ", end - start)
+        start = time.time()
+        gapped_alignments = self.parallel_gapped_extension(
+            ungapped_alignments
+        )
+        end = time.time()
+        print("Gapped extension : ", end - start)
