@@ -126,8 +126,8 @@ class Alignment:
         diagonal = current_hit[1] - current_hit[0]
         if diagonal in recent_hits:
             recent_hit = recent_hits[diagonal]
-            q_distance = current_hit[0] - recent_hit[0]
-            db_distance = current_hit[1] - recent_hit[1]
+            q_distance = abs(current_hit[0] - recent_hit[0])
+            db_distance = abs(current_hit[1] - recent_hit[1])
             return ((Config.K - 1) < db_distance <= Config.A) and (
                 q_distance == db_distance
             )
