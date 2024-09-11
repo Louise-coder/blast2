@@ -127,6 +127,7 @@ class GappedBlast:
             logger.info(f"Extending {sequence_index}/{len(self.hits)}")
             q_record = self.query
             db_record = self.db.records[sequence_index]
+            db_record.id = sequence_index
             alignments += Alignment.extend_to_hsp(
                 q_record, db_record, hits
             )

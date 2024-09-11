@@ -41,6 +41,7 @@ class Alignment:
         self.start_b = start_b
         self.len = length
         self.score = -1
+        self.seq_id = -1
 
     def __str__(self):
         """Redefining the print behavior of an Alignment.
@@ -244,6 +245,7 @@ class Alignment:
                             normalize_ungapped_score(extended_hsp.score)
                             > Config.SG
                         ):
+                            extended_hsp.seq_id = db_record.id
                             all_hsp.append(extended_hsp)
                     recent_hits[diagonal] = (q_pos, db_pos)
         return all_hsp
