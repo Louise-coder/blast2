@@ -36,6 +36,9 @@ class Config:
     KU = 0.134
     EVALUE = 0.001
 
+    GAP_OPENING_PENALTY = -11
+    GAP_EXTENSION_PENALTY = -1
+
     def __str__(cls):
         """Redefine __str__ to display the current configuration."""
         result = ["GAPPED-BLAST CONFIGURATION"]
