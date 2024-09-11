@@ -146,7 +146,7 @@ class GappedBlast:
         i = 0
         gapped_alignments = []
         for hsp in ungapped_alignments:
-            if i % 10 == 0:
+            if i % 10 == 0 and i != 0:
                 logger.info(f"{i} alignments have been extended...")
             seed = hsp.find_best_seed()
             forward = Alignment(
