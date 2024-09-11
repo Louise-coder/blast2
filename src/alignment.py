@@ -323,6 +323,17 @@ class Alignment:
                 db_seed = b_start + (size // 2)
         return (q_seed, db_seed)
 
+    def find_best_seed_2(self) -> Tuple[int, int]:
+        """Another version of the best seed finder.
+
+        Notes
+        -----
+        The seed is defined as the center of hsp.
+        """
+        q_seed = self.start_a + (self.len // 2)
+        db_seed = self.start_b + (self.len // 2)
+        return (q_seed, db_seed)
+
     def needleman_wunsch_local_alignment(self) -> Self:
         """Perform a local alignment using the Needleman-Wunsch algorithm.
 
