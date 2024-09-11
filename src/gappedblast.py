@@ -126,15 +126,51 @@ class GappedBlast:
             )
         return alignments
 
-    def gapped_extension(self, alignments: List[Alignment]):
+    def gapped_extension(
+        self, alignments: List[Alignment]
+    ) -> List[Alignment]:
+        """Extend all the HSP previously found with gaps.
+
+        Parameters
+        ----------
+        alignments : List[Alignment]
+            A list of HSP to extend with gaps.
+        """
         logger.info("Gapped-BLAST: Extending hits with gaps...")
-        for alignment in alignments:
-            seed = alignment.find_best_seed()
+        i = 0
+        gapped_alignments = []
+        for hsp in alignments:
+            if i % 10 == 0:
+                logger.info(f"{i} alignments have been extended...")
+            seed = hsp.find_best_seed()
+            forward = Alignment(
+                hsp.seq_a[seed[0] :],
+                hsp.seq_b[seed[1] :],
+                0,
+                0,
+                1,
+            ).needleman_wunsch_local_alignment()
+            sub_a = hsp.seq_a[: seed[0]]
+            sub_b = hsp.seq_b[: seed[1]]
+            backward = Alignment(
+                sub_a[::-1],
+                sub_b[::-1],
+                0,
+                0,
+                1,
+            ).needleman_wunsch_local_alignment()
+            backward.seq_a = backward.seq_a[::-1]
+            backward.seq_b = backward.seq_b[::-1]
+            gapped_alignment = forward.merge(backward)
+            gapped_alignments.append(gapped_alignment)
+            i += 1
+        return gapped_alignments
 
     def run(self):
         """Execute the BLAST process."""
         self.load_data()
         self.hits_detection()
         alignments = self.ungapped_extension()
-        self.gapped_extension(alignments)
+        logger.info(f"{len(alignments)} hits to extend with gaps...")
+        gapped_alignments = self.gapped_extension(alignments)
         # TODO: output generation

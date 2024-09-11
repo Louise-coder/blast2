@@ -1,5 +1,7 @@
 """This module defines the `Alignment` class."""
 
+import numpy as np
+from numpy import ndarray
 from typing import Dict, List, Self, Tuple
 
 from config import Config
@@ -275,3 +277,133 @@ class Alignment:
                 q_seed = (2 * a_start + size) // 2
                 db_seed = (2 * b_start + size) // 2
         return (q_seed, db_seed)
+
+    def needleman_wunsch_local_alignment(self) -> Self:
+        """Perform a local alignment using the Needleman-Wunsch algorithm.
+
+        Returns
+        -------
+        Alignment
+            The extended local alignment with gaps between the two sequences.
+
+        Notes
+        -----
+        F is the matrix of scores for the alignment.
+        M is the matrix of scores for the alignment ending in a match.
+        Ix is the matrix of scores for the alignment ending in a gap in the query sequence.
+        Iy is the matrix of scores for the alignment ending in a gap in the database sequence.
+        """
+        a_seq, b_seq = self.seq_a, self.seq_b
+        a_len, b_len = len(a_seq), len(b_seq)
+        gap_opening = Config.GAP_OPENING_PENALTY
+        gap_extension = Config.GAP_EXTENSION_PENALTY
+
+        # INITIALIZATION
+        F = np.zeros((b_len + 1, a_len + 1))
+        M = np.zeros((b_len + 1, a_len + 1))  # top left
+        Ix = np.zeros((b_len + 1, a_len + 1))  # left
+        Iy = np.zeros((b_len + 1, a_len + 1))  # top
+        Ix[0, 0], Iy[0, 0] = gap_opening, gap_opening
+        for i in range(1, b_len + 1):
+            Ix[i, 0] = gap_opening + i * gap_extension
+            Iy[i, 0] = -np.inf
+            M[i, 0] = Iy[i, 0]
+        for j in range(1, a_len + 1):
+            Iy[0, j] = gap_opening + j * gap_extension
+            Ix[0, j] = -np.inf
+            M[0, j] = Ix[0, j]
+        for i in range(1, b_len + 1):
+            for j in range(1, a_len + 1):
+                matrix_score = Config.get_matrix_score(
+                    a_seq[j - 1], b_seq[i - 1]
+                )
+                M[i, j] = max(
+                    M[i - 1, j - 1] + matrix_score,
+                    Ix[i - 1, j - 1] + matrix_score,
+                    Iy[i - 1, j - 1] + matrix_score,
+                )
+                Ix[i, j] = max(
+                    M[i - 1, j] + gap_opening + gap_extension,
+                    Ix[i - 1, j] + gap_extension,
+                )
+                Iy[i, j] = max(
+                    M[i, j - 1] + gap_opening + gap_extension,
+                    Iy[i, j - 1] + gap_extension,
+                )
+                F[i, j] = max(M[i, j], Ix[i, j], Iy[i, j])
+        return self._backtrack(F, M, Ix, Iy)
+
+    def _backtrack(
+        self, F: ndarray, M: ndarray, Ix: ndarray, Iy: ndarray
+    ) -> Self:
+        """Backtrack to find the local alignment.
+
+        Parameters
+        ----------
+        F : ndarray
+            The matrix of scores for the alignment.
+        M : ndarray
+            The matrix of scores for the alignment ending in a match.
+        Ix : ndarray
+            The matrix of scores for the alignment ending in a gap in the query sequence.
+        Iy : ndarray
+            The matrix of scores for the alignment ending in a gap in the database sequence.
+
+        Returns
+        -------
+        Alignment
+            The extended local alignment with gaps between the two sequences.
+        """
+        i, j = np.unravel_index(np.argmax(F), F.shape)
+        aligned_a, aligned_b = [], []
+        while i > 0 and j > 0:
+            current_score = F[i, j]
+            if current_score == M[i, j]:
+                aligned_a.append(self.seq_a[j - 1])
+                aligned_b.append(self.seq_b[i - 1])
+                i -= 1
+                j -= 1
+            elif current_score == Ix[i, j]:
+                aligned_a.append(self.seq_a[j - 1])
+                aligned_b.append("-")
+                j -= 1
+            elif current_score == Iy[i, j]:
+                aligned_a.append("-")
+                aligned_b.append(self.seq_b[i - 1])
+                i -= 1
+        while j > 0:
+            aligned_a.append(self.seq_a[j - 1])
+            aligned_b.append("-")
+            j -= 1
+        while i > 0:
+            aligned_a.append("-")
+            aligned_b.append(self.seq_b[i - 1])
+            i -= 1
+        aligned_a.reverse()
+        aligned_b.reverse()
+        local = Alignment(
+            "".join(aligned_a), "".join(aligned_b), 0, 0, len(aligned_a)
+        )
+        local.score = np.argmax(F)
+        return local
+
+    def merge(self, other: Self) -> Self:
+        """Merge two alignments into a single one.
+
+        Parameters
+        ----------
+        other : Alignment
+            The other alignment to merge with the current one.
+
+        Returns
+        -------
+        Alignment
+            The merged alignment.
+        """
+        seq_a = other.seq_a + self.seq_a
+        seq_b = other.seq_b + self.seq_b
+        length = other.len + self.len
+        res = Alignment(seq_a, seq_b, 0, 0, length)
+        res.score = other.score + self.score
+        return res
+
