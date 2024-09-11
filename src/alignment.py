@@ -262,10 +262,9 @@ class Alignment:
         If the HSP is shorter than 11, the seed is the center of the HSP.
         """
         size = 11
-        q_seed = (2 * self.start_a + size) // 2
-        db_seed = (2 * self.start_b + size) // 2
+        q_seed = self.start_a + (self.len // 2)
+        db_seed = self.start_b + (self.len // 2)
         if self.len < size:
-            size = self.len
             return (q_seed, db_seed)
         top_score = Alignment.compute_ungapped_score(
             self.seq_a[self.start_a : self.start_a + size],
@@ -280,8 +279,8 @@ class Alignment:
             )
             if current_score > top_score:
                 top_score = current_score
-                q_seed = (2 * a_start + size) // 2
-                db_seed = (2 * b_start + size) // 2
+                q_seed = a_start + (size // 2)
+                db_seed = b_start + (size // 2)
         return (q_seed, db_seed)
 
     def needleman_wunsch_local_alignment(self) -> Self:
