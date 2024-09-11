@@ -210,3 +210,26 @@ class GappedBlast:
         gapped_alignments = self.parallel_gapped_extension(
             ungapped_alignments
         )
+
+    def run_with_time(self):
+        """Same as run but with time measurement for each step."""
+        import time
+
+        start = time.time()
+        self.load_data()
+        end = time.time()
+        print("Load_Data : ", end - start)
+        start = time.time()
+        self.hits_detection()
+        end = time.time()
+        print("Hits_detection : ", end - start)
+        start = time.time()
+        ungapped_alignments = self.ungapped_extension()
+        end = time.time()
+        print("Ungapped extension : ", end - start)
+        start = time.time()
+        gapped_alignments = self.parallel_gapped_extension(
+            ungapped_alignments
+        )
+        end = time.time()
+        print("Gapped extension : ", end - start)
