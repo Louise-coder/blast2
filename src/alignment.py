@@ -389,7 +389,7 @@ class Alignment:
         local = Alignment(
             "".join(aligned_a), "".join(aligned_b), 0, 0, len(aligned_a)
         )
-        local.score = np.argmax(F)
+        local.score = np.max(F)
         return local
 
     def merge(self, other: Self) -> Self:
