@@ -29,7 +29,7 @@ class Config:
     # Default configuration
     MATRIX = substitution_matrices.load("BLOSUM62")
     K = 3
-    T = 11
+    T = 13
     A = 10
     SG = 22.0
     LU = 0.3176

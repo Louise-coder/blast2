@@ -170,13 +170,13 @@ class Alignment:
         db_word = str(self.seq_b[db_start : (db_start + self.len)])
         self.score = Alignment.compute_ungapped_score(q_word, db_word)
         current, top = self, self.copy()
-        Su = 0.1 * top.score
+        Su = 0.05 * top.score
         i = 0
         while i < 20 and (top.score - current.score) <= Su:
             current._one_extension()
             if current.score > top.score:
                 top = current.copy()
-                Su = 0.1 * top.score
+                Su = 0.05 * top.score
             i += 1
         return top
 
