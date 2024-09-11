@@ -1,15 +1,16 @@
 """This module defines the `GappedBlast` class."""
 
+from Bio.Align import substitution_matrices
 from collections import defaultdict
 import logging
-from Bio.Align import substitution_matrices
+import multiprocessing
 from typing import List
 
-from alignment import Alignment
+
+from alignment import Alignment, worker_gapped_extension
 from config import Config
 from database import Database
 from sequence import Sequence
-
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -173,13 +174,39 @@ class GappedBlast:
             i += 1
         return gapped_alignments
 
+    def parallel_gapped_extension(
+        self, ungapped_alignments: List[Alignment]
+    ) -> List[Alignment]:
+        """Optimized version of gapped_extension() using multiprocessing.
+
+        Notes
+        -----
+        Each process is a worker that extends several HSP with gaps.
+
+        """
+        logger.info("Gapped-BLAST: Extending hits with gaps...")
+        workers = multiprocessing.Pool(None)
+        returned_alignments = [
+            workers.apply_async(func=worker_gapped_extension, args=[hsp])
+            for hsp in ungapped_alignments
+        ]
+        i = 0
+        all_alignments = []
+        size = len(ungapped_alignments)
+        for alignment in returned_alignments:
+            if i % 10 == 0 and i != 0:
+                logger.info(f"{i}/{size} alignments have been extended...")
+            all_alignments.append(alignment.get())
+            i += 1
+        workers.close()
+        workers.join()
+        return all_alignments
+
     def run(self):
         """Execute the BLAST process."""
         self.load_data()
         self.hits_detection()
         ungapped_alignments = self.ungapped_extension()
-        logger.info(
-            f"{len(ungapped_alignments)} hits to extend with gaps..."
+        gapped_alignments = self.parallel_gapped_extension(
+            ungapped_alignments
         )
-        gapped_alignments = self.gapped_extension(ungapped_alignments)
-        # TODO: output generation

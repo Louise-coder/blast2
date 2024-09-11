@@ -9,6 +9,42 @@ from sequence import Sequence
 from utils import normalize_ungapped_score
 
 
+def worker_gapped_extension(hsp: Self) -> Self:
+    """Extend a hit with gaps.
+
+    Parameters
+    ----------
+    hsp : Alignment
+
+    Returns
+    -------
+    Alignment
+        The extended alignment with gaps.
+    """
+    seed = hsp.find_best_seed()
+    forward = Alignment(
+        hsp.seq_a[seed[0] :],
+        hsp.seq_b[seed[1] :],
+        0,
+        0,
+        1,
+    ).needleman_wunsch_local_alignment()
+    sub_a = hsp.seq_a[: seed[0] - 1]
+    sub_b = hsp.seq_b[: seed[1] - 1]
+    backward = Alignment(
+        sub_a[::-1],
+        sub_b[::-1],
+        0,
+        0,
+        1,
+    ).needleman_wunsch_local_alignment()
+    backward.seq_a = backward.seq_a[::-1]
+    backward.seq_b = backward.seq_b[::-1]
+    gapped_alignment = forward.merge(backward)
+    gapped_alignment.seq_id = hsp.seq_id
+    return gapped_alignment
+
+
 class Alignment:
     """A class to represent an alignment between two sequences.
 
