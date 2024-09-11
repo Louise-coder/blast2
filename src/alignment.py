@@ -60,6 +60,8 @@ class Alignment:
         The starting position of the alignment in the second sequence.
     len : int
         The length of the alignment.
+    seq_id : int
+        The id of the matching sequence in the database.
     """
 
     def __init__(

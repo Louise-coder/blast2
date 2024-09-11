@@ -143,6 +143,17 @@ class GappedBlast:
         ----------
         ungapped_alignments : List[Alignment]
             A list of HSP to extend with gaps.
+
+        Returns
+        -------
+        List[Alignment]
+            A list of HSP extended with gaps.
+
+        Notes
+        -----
+        For each HSP, this method extends the alignment with gaps in both:
+        - The forward direction.
+        - The backward direction.
         """
         logger.info("Gapped-BLAST: Extending hits with gaps...")
         i = 0
