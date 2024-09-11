@@ -124,6 +124,7 @@ class GappedBlast:
         logger.info("Gapped-BLAST: Extending hits without gaps...")
         alignments = []
         for sequence_index, hits in self.hits.items():
+            logger.info(f"Extending {sequence_index}/{len(self.hits)}")
             q_record = self.query
             db_record = self.db.records[sequence_index]
             alignments += Alignment.extend_to_hsp(
