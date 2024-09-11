@@ -147,17 +147,20 @@ class Alignment:
         )
         a_len, b_len = len(self.seq_a), len(self.seq_b)
         b_step = 0 if ((a_start - 1 < 0) or (b_start - 1 < 0)) else 1
-        f_step = 0 if ((a_end + 1 < a_len) or (b_end + 1 < b_len)) else 1
+        f_step = 0 if ((a_end + 1 >= a_len) or (b_end + 1 >= b_len)) else 1
         self.start_a = a_start - b_step
         self.start_b = b_start - b_step
         self.len += b_step + f_step
-        self.score += Config.get_matrix_score(
-            self.seq_a[self.start_a],
-            self.seq_b[self.start_b],
-        ) + Config.get_matrix_score(
-            self.seq_a[a_end + f_step],
-            self.seq_b[b_end + f_step],
-        )
+        if f_step == 1:
+            self.score += Config.get_matrix_score(
+                self.seq_a[a_end + f_step],
+                self.seq_b[b_end + f_step],
+            )
+        if b_step == 1:
+            self.score += Config.get_matrix_score(
+                self.seq_a[a_start - b_step],
+                self.seq_b[b_start - b_step],
+            )
 
     def _ungapped_extension(self) -> Self:
         """Extend the alignment without allowing for gaps.
