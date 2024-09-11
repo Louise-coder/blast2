@@ -22,9 +22,9 @@ class Config:
         Lambda value used for normalizing scores in ungapped alignments.
     KU : float
         Kappa value used for normalizing scores in ungapped alignments.
-    LU : float
+    LG : float
         Lambda value used for normalizing scores in gapped alignments.
-    KU : float
+    KG : float
         Kappa value used for normalizing scores in gapped alignments.
     EVALUE : float
         E-value threshold for reporting significant alignments.
@@ -33,8 +33,8 @@ class Config:
     # Default configuration
     MATRIX = substitution_matrices.load("BLOSUM62")
     K = 3
-    T = 13
-    A = 10
+    T = 11
+    A = 40
     SG = 22.0
     LU = 0.314
     KU = 0.131
