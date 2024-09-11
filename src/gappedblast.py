@@ -93,8 +93,13 @@ class GappedBlast:
         self.db.load_index()
         logger.info("Gapped-BLAST: Searching hits...")
         hits = defaultdict(list)
-        for q_word in self.query.words:
-            for db_word, db_position in self.db.index.items():
+        q_words = self.query.words
+        index = self.db.index
+        size = len(q_words)
+        for i, q_word in enumerate(q_words):
+            if i % 10 == 0 and i != 0:
+                logger.info(f"{i}/{size} query words processed...")
+            for db_word, db_position in index.items():
                 score = Alignment.compute_ungapped_score(q_word, db_word)
                 if score <= Config.T:
                     continue
