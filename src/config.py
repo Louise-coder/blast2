@@ -22,6 +22,10 @@ class Config:
         Lambda value used for normalizing scores in ungapped alignments.
     KU : float
         Kappa value used for normalizing scores in ungapped alignments.
+    LU : float
+        Lambda value used for normalizing scores in gapped alignments.
+    KU : float
+        Kappa value used for normalizing scores in gapped alignments.
     EVALUE : float
         E-value threshold for reporting significant alignments.
     """
@@ -32,8 +36,10 @@ class Config:
     T = 13
     A = 10
     SG = 22.0
-    LU = 0.3176
-    KU = 0.134
+    LU = 0.314
+    KU = 0.131
+    LG = 0.267
+    KG = 0.0410
     EVALUE = 0.001
 
     GAP_OPENING_PENALTY = -11
