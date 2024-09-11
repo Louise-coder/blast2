@@ -170,6 +170,7 @@ class GappedBlast:
             backward.seq_a = backward.seq_a[::-1]
             backward.seq_b = backward.seq_b[::-1]
             gapped_alignment = forward.merge(backward)
+            gapped_alignment.seq_id = hsp.seq_id
             gapped_alignments.append(gapped_alignment)
             i += 1
         return gapped_alignments
