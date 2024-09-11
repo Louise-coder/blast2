@@ -407,9 +407,9 @@ class Alignment:
         Alignment
             The merged alignment.
         """
-        seq_a = other.seq_a + self.seq_a
-        seq_b = other.seq_b + self.seq_b
-        length = other.len + self.len
+        seq_a = other.seq_a[:-1] + self.seq_a
+        seq_b = other.seq_b[:-1] + self.seq_b
+        length = other.len + self.len - 1
         res = Alignment(seq_a, seq_b, 0, 0, length)
         res.score = other.score + self.score
         return res
