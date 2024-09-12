@@ -31,7 +31,7 @@ class GappedBlast:
         An instance of the `Sequence` class representing the query sequence.
     output : str
         Path to the output file.
-    hits : Dict[str, List[Tuple[str, str]]]
+    hits : Dict[int, List[Tuple[str, str]]]
         A dictionary where each key is a sequence ID and the value is a list of hits.
     """
 
