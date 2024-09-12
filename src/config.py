@@ -26,8 +26,14 @@ class Config:
         Lambda value used for normalizing scores in gapped alignments.
     KG : float
         Kappa value used for normalizing scores in gapped alignments.
+    GAP_OPENING_PENALTY : int
+        Penalty for opening a gap in the alignment.
+    GAP_EXTENSION_PENALTY : int
+        Penalty for extending a gap in the alignment.
     EVALUE : float
         E-value threshold for reporting significant alignments.
+    NB_RESULTS : int
+        Number of results to display in the output.
     """
 
     # Default configuration
@@ -35,15 +41,16 @@ class Config:
     K = 3
     T = 11
     A = 40
+    SU_PERC = 0.1
     SG = 22.0
     LU = 0.314
     KU = 0.131
     LG = 0.267
     KG = 0.0410
-    EVALUE = 0.001
-
     GAP_OPENING_PENALTY = -11
     GAP_EXTENSION_PENALTY = -1
+    EVALUE = 0.05
+    NB_RESULTS = 5
 
     def __str__(cls):
         """Redefine __str__ to display the current configuration."""

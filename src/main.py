@@ -10,7 +10,7 @@ Command-line Arguments:
 - -e, --evalue : (optional) E-value threshold. The default value is 0.001.
 
 Example Usage:
-    python main.py -d path/to/db.fasta -q path/to/query.fasta -o output_file -k 4 -m pam250 -e 0.01
+    python main.py -d path/to/db.fasta -q path/to/query.fasta -o out.txt -k 4 -m pam250 -e 0.01
 
 This will create an instance of `GappedBlast` with the provided parameters.
 """
@@ -64,8 +64,8 @@ def get_parameters() -> Namespace:
     parser.add_argument(
         "-o",
         "--output",
-        default="out",
-        help="Path to the output file.",
+        default="",
+        help="Path to the output file. If not provided, the output will be displayed on the console.",
     )
     parser.add_argument(
         "-e",
@@ -99,7 +99,7 @@ def display_title():
     """Display a welcome message."""
     msg = "WELCOME to your custom BLAST 2 !"
     border_char = "*"
-    border = f"\033[35m{border_char * (len(msg) + 4)}*\033[0m"
+    border = f"\033[35m{border_char * (len(msg) + 3)}*\033[0m"
     print(border)
     print(f"\033[35m* {msg} *\033[0m")
     print(border)

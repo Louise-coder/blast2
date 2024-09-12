@@ -6,7 +6,11 @@ from typing import Dict, List, Self, Tuple
 
 from config import Config
 from sequence import Sequence
-from utils import normalize_ungapped_score
+from utils import (
+    compute_evalue,
+    normalize_gapped_score,
+    normalize_ungapped_score,
+)
 
 
 def worker_gapped_extension(hsp: Self) -> Self:
@@ -29,8 +33,8 @@ def worker_gapped_extension(hsp: Self) -> Self:
         0,
         1,
     ).needleman_wunsch_local_alignment()
-    sub_a = hsp.seq_a[: seed[0] - 1]
-    sub_b = hsp.seq_b[: seed[1] - 1]
+    sub_a = hsp.seq_a[: seed[0]]
+    sub_b = hsp.seq_b[: seed[1]]
     backward = Alignment(
         sub_a[::-1],
         sub_b[::-1],
@@ -214,12 +218,12 @@ class Alignment:
         db_word = str(self.seq_b[db_start : (db_start + self.len)])
         self.score = Alignment.compute_ungapped_score(q_word, db_word)
         current, top = self, self.copy()
-        Su = 0.2 * top.score
+        Su = Config.SU_PERC * top.score
         while (top.score - current.score) <= Su:
             current._one_extension()
             if current.score > top.score:
                 top = current.copy()
-                Su = 0.2 * top.score
+                Su = Config.SU_PERC * top.score
             if (current.start_a == 0 or current.start_b == 0) and (
                 current.start_a + current.len == len(self.seq_a)
                 or current.start_b + current.len == len(self.seq_b)
@@ -353,8 +357,6 @@ class Alignment:
         a_len, b_len = len(a_seq), len(b_seq)
         gap_opening = Config.GAP_OPENING_PENALTY
         gap_extension = Config.GAP_EXTENSION_PENALTY
-
-        # INITIALIZATION
         F = np.zeros((b_len + 1, a_len + 1))
         M = np.zeros((b_len + 1, a_len + 1))  # top left
         Ix = np.zeros((b_len + 1, a_len + 1))  # left
@@ -379,11 +381,11 @@ class Alignment:
                     Iy[i - 1, j - 1] + matrix_score,
                 )
                 Ix[i, j] = max(
-                    M[i - 1, j] + gap_opening + gap_extension,
+                    M[i - 1, j] + gap_opening,
                     Ix[i - 1, j] + gap_extension,
                 )
                 Iy[i, j] = max(
-                    M[i, j - 1] + gap_opening + gap_extension,
+                    M[i, j - 1] + gap_opening,
                     Iy[i, j - 1] + gap_extension,
                 )
                 F[i, j] = max(M[i, j], Ix[i, j], Iy[i, j])
@@ -412,7 +414,7 @@ class Alignment:
         """
         i, j = np.unravel_index(np.argmax(F), F.shape)
         aligned_a, aligned_b = [], []
-        while i > 0 and j > 0:
+        while F[i, j] > 0 and i > 0 and j > 0:
             current_score = F[i, j]
             if current_score == M[i, j]:
                 aligned_a.append(self.seq_a[j - 1])
@@ -456,10 +458,145 @@ class Alignment:
         Alignment
             The merged alignment.
         """
-        seq_a = other.seq_a[:-1] + self.seq_a
-        seq_b = other.seq_b[:-1] + self.seq_b
+        seq_a = other.seq_a + self.seq_a
+        seq_b = other.seq_b + self.seq_b
         length = other.len + self.len - 1
         res = Alignment(seq_a, seq_b, 0, 0, length)
         res.score = other.score + self.score
         return res
 
+    def compute_statistics(self, q_len: int, db_len: int):
+        """Compute the statistics of the alignment.
+
+        Parameters
+        ----------
+        q_len : int
+            The length of the query sequence.
+        db_len : int
+            The total number of residues in the database.
+
+        Notes
+        -----
+        The statistics include:
+        - The normalized score (for gapped alignments).
+        - The e-value.
+        - The number of matches, mismatches, and gaps.
+        """
+        nb_matches, nb_mismatches, nb_gaps = 0, 0, 0
+        normalized_score = normalize_gapped_score(self.score)
+        evalue = compute_evalue(normalized_score, q_len, db_len)
+        for i in range(self.len):
+            if self.seq_a[i] == self.seq_b[i]:
+                nb_matches += 1
+            elif self.seq_a[i] == "-" or self.seq_b[i] == "-":
+                nb_gaps += 1
+            else:
+                nb_mismatches += 1
+        self.normalized_score = normalized_score
+        self.evalue = evalue
+        self.n_matches = nb_matches
+        self.n_mismatches = nb_mismatches
+        self.n_gaps = nb_gaps
+
+    def keep_best_alignments(
+        gapped_alignments: List[Self],
+    ) -> List[Self]:
+        """Keep only the best alignment for each sequence.
+
+        Parameters
+        ----------
+        gapped_alignments : List[Self]
+            A list of gapped alignments
+
+        Returns
+        -------
+        List[Self]
+            A list of the best alignment for each sequence.
+        """
+        unique_alignments = {}
+        for alignment in gapped_alignments:
+            if alignment.seq_id in unique_alignments:
+                if (
+                    alignment.score
+                    > unique_alignments[alignment.seq_id].score
+                ):
+                    unique_alignments[alignment.seq_id] = alignment
+            else:
+                unique_alignments[alignment.seq_id] = alignment
+        return list(unique_alignments.values())
+
+    def display_results(self, q_record: Sequence, db_record: Sequence):
+        """Display the results of an alignment.
+
+        Parameters
+        ----------
+        db_record : Sequence
+            The database `Sequence` being compared to the query.
+        """
+        print(f"\033[33m>{db_record.name} {db_record.description}\033[0m")
+        print(f"Length={len(db_record.seq)}\n")
+
+        print(
+            f"Score={self.normalized_score:.1f} bits ({self.score}), \033[36mExpect={self.evalue:.1e}\033[0m"
+        )
+        print(
+            f"Identities={self.n_matches}/{self.len} ({int(self.n_matches*100/self.len)}%), Positives={self.n_mismatches}/{self.len} ({int(self.n_mismatches*100/self.len)}%), Gaps={self.n_gaps}/{self.len} ({int(self.n_gaps*100/self.len)}%)\n"
+        )
+        q_start = str(q_record.seq.strip()).find(
+            self.seq_a.replace("-", "").strip()
+        )
+        db_start = str(db_record.seq.strip()).find(
+            self.seq_b.replace("-", "").strip()
+        )
+        segment_width = 50
+        if self.len < 50:
+            print(f"Query:  {q_start:5d}\t{self.seq_a:<50}\t{q_start+50}")
+            print(
+                f"Sbjct:  {db_start:5d}\t{self.seq_b:<50}\t{db_start+50}\n"
+            )
+        else:
+            total_length = len(self.seq_a)
+            for start in range(0, total_length, segment_width):
+                end = min(start + segment_width, total_length)
+                print(
+                    f"Query:  {q_start + start + 1:5d} {self.seq_a[start:end]:<50} {q_start + end:5d}"
+                )
+                print(
+                    f"Sbjct:  {db_start + start + 1:5d} {self.seq_b[start:end]:<50} {db_start + end:5d}\n"
+                )
+
+    def get_results(self, q_record: Sequence, db_record: Sequence) -> str:
+        """Display the results of an alignment.
+
+        Parameters
+        ----------
+        db_record : Sequence
+            The database `Sequence` being compared to the query.
+
+        Returns
+        -------
+        str
+            A string containing the results of the alignment.
+        """
+        content = f"{db_record.name} {db_record.description}\n"
+        content += f"Length={len(db_record.seq)}\n\n"
+        content += f"Score={self.normalized_score:.1f} bits ({self.score}), Expect={self.evalue:.1e}\n"
+        content += f"Identities={self.n_matches}/{self.len} ({int(self.n_matches*100/self.len)}%), Positives={self.n_mismatches}/{self.len} ({int(self.n_mismatches*100/self.len)}%), Gaps={self.n_gaps}/{self.len} ({int(self.n_gaps*100/self.len)}%)\n\n"
+        q_start = str(q_record.seq.strip()).find(
+            self.seq_a.replace("-", "").strip()
+        )
+        db_start = str(db_record.seq.strip()).find(
+            self.seq_b.replace("-", "").strip()
+        )
+        segment_width = 50
+        if self.len <= segment_width:
+            content += f"Query:  {q_start + 1:5d} {self.seq_a} {q_start + self.len:5d}\n"
+            content += f"Sbjct:  {db_start + 1:5d} {self.seq_b} {db_start + self.len:5d}\n\n"
+        else:
+            total_length = len(self.seq_a)
+
+            for start in range(0, total_length, segment_width):
+                end = min(start + segment_width, total_length)
+                content += f"Query:  {q_start + start + 1:5d} {self.seq_a[start:end]:<50} {q_start + end:5d}\n"
+                content += f"Sbjct:  {db_start + start + 1:5d} {self.seq_b[start:end]:<50} {db_start + end:5d}\n\n"
+        return content + "\n"
