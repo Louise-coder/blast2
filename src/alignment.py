@@ -6,7 +6,11 @@ from typing import Dict, List, Self, Tuple
 
 from config import Config
 from sequence import Sequence
-from utils import normalize_ungapped_score
+from utils import (
+    compute_evalue,
+    normalize_gapped_score,
+    normalize_ungapped_score,
+)
 
 
 def worker_gapped_extension(hsp: Self) -> Self:
@@ -462,4 +466,37 @@ class Alignment:
         res = Alignment(seq_a, seq_b, 0, 0, length)
         res.score = other.score + self.score
         return res
+
+    def compute_statistics(self, q_len: int, db_len: int):
+        """Compute the statistics of the alignment.
+
+        Parameters
+        ----------
+        q_len : int
+            The length of the query sequence.
+        db_len : int
+            The total number of residues in the database.
+
+        Notes
+        -----
+        The statistics include:
+        - The normalized score (for gapped alignments).
+        - The e-value.
+        - The number of matches, mismatches, and gaps.
+        """
+        nb_matches, nb_mismatches, nb_gaps = 0, 0, 0
+        normalized_score = normalize_gapped_score(self.score)
+        evalue = compute_evalue(normalized_score, q_len, db_len)
+        for i in range(self.len):
+            if self.seq_a[i] == self.seq_b[i]:
+                nb_matches += 1
+            elif self.seq_a[i] == "-" or self.seq_b[i] == "-":
+                nb_gaps += 1
+            else:
+                nb_mismatches += 1
+        self.normalized_score = normalized_score
+        self.evalue = evalue
+        self.n_matches = nb_matches
+        self.n_mismatches = nb_mismatches
+        self.n_gaps = nb_gaps
 
