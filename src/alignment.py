@@ -383,11 +383,11 @@ class Alignment:
                     Iy[i - 1, j - 1] + matrix_score,
                 )
                 Ix[i, j] = max(
-                    M[i - 1, j] + gap_opening + gap_extension,
+                    M[i - 1, j] + gap_opening,
                     Ix[i - 1, j] + gap_extension,
                 )
                 Iy[i, j] = max(
-                    M[i, j - 1] + gap_opening + gap_extension,
+                    M[i, j - 1] + gap_opening,
                     Iy[i, j - 1] + gap_extension,
                 )
                 F[i, j] = max(M[i, j], Ix[i, j], Iy[i, j])
@@ -416,7 +416,7 @@ class Alignment:
         """
         i, j = np.unravel_index(np.argmax(F), F.shape)
         aligned_a, aligned_b = [], []
-        while i > 0 and j > 0:
+        while F[i, j] > 0 and i > 0 and j > 0:
             current_score = F[i, j]
             if current_score == M[i, j]:
                 aligned_a.append(self.seq_a[j - 1])
