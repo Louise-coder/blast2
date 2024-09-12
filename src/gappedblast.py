@@ -63,7 +63,7 @@ class GappedBlast:
         Attempts to load the database and query sequences.
         If loading fails, prompts the user for new file paths.
         """
-        logger.info("Gapped-BLAST: Loading data...")
+        logger.info("Loading data...")
         ok = False
         while not ok:
             try:
@@ -90,9 +90,9 @@ class GappedBlast:
         -----
         A hit is detected if the alignment score is greater than `T`.
         """
-        logger.info("Gapped-BLAST: Indexation...")
+        logger.info("Indexation...")
         self.db.load_index()
-        logger.info("Gapped-BLAST: Searching hits...")
+        logger.info("Searching hits...")
         hits = defaultdict(list)
         q_words = self.query.words
         index = self.db.index
@@ -122,10 +122,13 @@ class GappedBlast:
         extends the hits without allowing for gaps. The goal is to
         determine the HSP that have the most potential for gapped extension.
         """
-        logger.info("Gapped-BLAST: Extending hits without gaps...")
+        logger.info("Extending hits without gaps...")
         alignments = []
         for sequence_index, hits in self.hits.items():
-            logger.info(f"Extending {sequence_index}/{len(self.hits)}")
+            if sequence_index != 0 and sequence_index % 10 == 0:
+                logger.info(
+                    f"{sequence_index}/{len(self.hits)} alignments have been extended..."
+                )
             q_record = self.query
             db_record = self.db.records[sequence_index]
             db_record.id = sequence_index
@@ -155,12 +158,10 @@ class GappedBlast:
         - The forward direction.
         - The backward direction.
         """
-        logger.info("Gapped-BLAST: Extending hits with gaps...")
+        logger.info("Extending hits with gaps...")
         i = 0
         gapped_alignments = []
         for hsp in ungapped_alignments:
-            if i % 10 == 0 and i != 0:
-                logger.info(f"{i} alignments have been extended...")
             seed = hsp.find_best_seed()
             forward = Alignment(
                 hsp.seq_a[seed[0] :],
@@ -184,6 +185,7 @@ class GappedBlast:
             gapped_alignment.seq_id = hsp.seq_id
             gapped_alignments.append(gapped_alignment)
             i += 1
+            logger.info(f"{i} alignments have been extended...")
         return gapped_alignments
 
     def parallel_gapped_extension(
@@ -196,7 +198,7 @@ class GappedBlast:
         Each process is a worker that extends several HSP with gaps.
 
         """
-        logger.info("Gapped-BLAST: Extending hits with gaps...")
+        logger.info("Extending hits with gaps...")
         workers = multiprocessing.Pool(None)
         returned_alignments = [
             workers.apply_async(func=worker_gapped_extension, args=[hsp])
@@ -206,10 +208,9 @@ class GappedBlast:
         all_alignments = []
         size = len(ungapped_alignments)
         for alignment in returned_alignments:
-            if i % 10 == 0 and i != 0:
-                logger.info(f"{i}/{size} alignments have been extended...")
             all_alignments.append(alignment.get())
             i += 1
+            logger.info(f"{i}/{size} alignments have been extended...")
         workers.close()
         workers.join()
         return all_alignments
