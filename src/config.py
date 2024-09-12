@@ -41,6 +41,7 @@ class Config:
     K = 3
     T = 11
     A = 40
+    SU_PERC = 0.1
     SG = 22.0
     LU = 0.314
     KU = 0.131
@@ -48,7 +49,7 @@ class Config:
     KG = 0.0410
     GAP_OPENING_PENALTY = -11
     GAP_EXTENSION_PENALTY = -1
-    EVALUE = 0.1
+    EVALUE = 0.05
     NB_RESULTS = 5
 
     def __str__(cls):

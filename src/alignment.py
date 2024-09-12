@@ -218,12 +218,12 @@ class Alignment:
         db_word = str(self.seq_b[db_start : (db_start + self.len)])
         self.score = Alignment.compute_ungapped_score(q_word, db_word)
         current, top = self, self.copy()
-        Su = 0.2 * top.score
+        Su = Config.SU_PERC * top.score
         while (top.score - current.score) <= Su:
             current._one_extension()
             if current.score > top.score:
                 top = current.copy()
-                Su = 0.2 * top.score
+                Su = Config.SU_PERC * top.score
             if (current.start_a == 0 or current.start_b == 0) and (
                 current.start_a + current.len == len(self.seq_a)
                 or current.start_b + current.len == len(self.seq_b)
