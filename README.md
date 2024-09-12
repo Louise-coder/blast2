@@ -1,7 +1,7 @@
 **💻🧬 BLAST 2**\
 _Basic Local Alignment Search Tool 2_
 ==============
-<ins>Student</ins> : Louise LAM (21980795) M1BI
+<ins>Student</ins> : Louise LAM (21980795) M2BI
 
 ## Getting started
 These instructions will help you get a functional version of my short-term Blast2 project running on your local machine. Please follow the instructions below for an optimal experience.
