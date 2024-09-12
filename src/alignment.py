@@ -500,3 +500,98 @@ class Alignment:
         self.n_mismatches = nb_mismatches
         self.n_gaps = nb_gaps
 
+    def keep_best_alignments(
+        gapped_alignments: List[Self],
+    ) -> List[Self]:
+        """Keep only the best alignment for each sequence.
+
+        Parameters
+        ----------
+        gapped_alignments : List[Self]
+            A list of gapped alignments
+
+        Returns
+        -------
+        List[Self]
+            A list of the best alignment for each sequence.
+        """
+        unique_alignments = {}
+        for alignment in gapped_alignments:
+            if alignment.seq_id in unique_alignments:
+                if (
+                    alignment.score
+                    > unique_alignments[alignment.seq_id].score
+                ):
+                    unique_alignments[alignment.seq_id] = alignment
+            else:
+                unique_alignments[alignment.seq_id] = alignment
+        return list(unique_alignments.values())
+
+    def display_results(self, q_record: Sequence, db_record: Sequence):
+        """Display the results of an alignment.
+
+        Parameters
+        ----------
+        db_record : Sequence
+            The database `Sequence` being compared to the query.
+        """
+        print(f"\033[33m>{db_record.name} {db_record.description}\033[0m")
+        print(f"Length={len(db_record.seq)}\n")
+
+        print(
+            f"Score={self.normalized_score:.1f} bits ({self.score}), \033[36mExpect={self.evalue:.1e}\033[0m"
+        )
+        print(
+            f"Identities={self.n_matches}/{self.len} ({int(self.n_matches*100/self.len)}%), Positives={self.n_mismatches}/{self.len} ({int(self.n_mismatches*100/self.len)}%), Gaps={self.n_gaps}/{self.len} ({int(self.n_gaps*100/self.len)}%)\n"
+        )
+        q_start = str(q_record.seq.strip()).find(
+            self.seq_a.replace("-", "").strip()
+        )
+        db_start = str(db_record.seq.strip()).find(
+            self.seq_b.replace("-", "").strip()
+        )
+        if self.len < 50:
+            print(f"Query:  {q_start}\t{self.seq_a}\t{q_start+50}")
+            print(f"Sbjct:  {db_start}\t{self.seq_b}\t{db_start+50}\n")
+        else:
+            for i in range(50, self.len, 50):
+                print(
+                    f"Query:  {q_start+i}\t{self.seq_a[i-50:i]}\t{q_start+i+50}"
+                )
+                print(
+                    f"Sbjct:  {db_start+i}\t{self.seq_b[i-50:i]}\t{db_start+i+50}\n"
+                )
+
+    def get_results(self, q_record: Sequence, db_record: Sequence) -> str:
+        """Display the results of an alignment.
+
+        Parameters
+        ----------
+        db_record : Sequence
+            The database `Sequence` being compared to the query.
+
+        Returns
+        -------
+        str
+            A string containing the results of the alignment.
+        """
+        content = f"{db_record.name} {db_record.description}\n"
+        content += f"Length={len(db_record.seq)}\n\n"
+        content += f"Score={self.normalized_score:.1f} bits ({self.score}), Expect={self.evalue:.1e}\n"
+        content += f"Identities={self.n_matches}/{self.len} ({int(self.n_matches*100/self.len)}%), Positives={self.n_mismatches}/{self.len} ({int(self.n_mismatches*100/self.len)}%), Gaps={self.n_gaps}/{self.len} ({int(self.n_gaps*100/self.len)}%)\n\n"
+        q_start = str(q_record.seq.strip()).find(
+            self.seq_a.replace("-", "").strip()
+        )
+        db_start = str(db_record.seq.strip()).find(
+            self.seq_b.replace("-", "").strip()
+        )
+        if self.len < 50:
+            content += f"Query:  {q_start}\t{self.seq_a}\t{q_start+50}\n"
+            content += (
+                f"Sbjct:  {db_start}\t{self.seq_b}\t{db_start+50}\n\n"
+            )
+        else:
+            for i in range(50, self.len, 50):
+                content += f"Query:  {q_start+i}\t{self.seq_a[i-50:i]}\t{q_start+i+50}\n"
+                content += f"Sbjct:  {db_start+i}\t{self.seq_b[i-50:i]}\t{db_start+i+50}\n\n"
+        return content + "\n"

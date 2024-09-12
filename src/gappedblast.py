@@ -215,6 +215,94 @@ class GappedBlast:
         workers.join()
         return all_alignments
 
+    def display_results(self, gapped_alignments: List[Alignment]):
+        """Display the results of the BLAST process.
+
+        Parameters
+        ----------
+        gapped_alignments : List[Alignment]
+            The list of local alignments extended with gaps.
+
+        Notes
+        -----
+        The results are displayed in the console.
+        """
+        logger.info("Collecting results...")
+        q_len = len(self.query)
+        db_len = sum([len(record.seq) for record in self.db.records])
+        print("\nGAPPED BLASTP\n\n\n")
+        print(
+            f"Database:  {self.db_fasta}\n{len(self.db.records)} sequences; {db_len} total letters\n\n\n"
+        )
+        print(
+            f"\033[32mQuery= {self.query.name} {self.query.description}\033[0m\n"
+        )
+        print(f"Length={q_len}\n")
+        print("Sequences producing significant alignments:\n")
+        for alignment in gapped_alignments:
+            alignment.compute_statistics(q_len, db_len)
+        i = 0
+        best_alignments = Alignment.keep_best_alignments(gapped_alignments)
+        best_alignments.sort(key=lambda x: x.evalue)
+        for alignment in best_alignments:
+            if alignment.evalue > Config.EVALUE or i > Config.NB_RESULTS:
+                break
+            print(
+                f"{self.db.records[alignment.seq_id].name}\tScore={alignment.normalized_score:.1f} bits\tE-value={alignment.evalue:.1e}"
+            )
+            i += 1
+        print("\n\n")
+        i = 0
+        for alignment in best_alignments:
+            if alignment.evalue > Config.EVALUE or i > Config.NB_RESULTS:
+                break
+            alignment.display_results(
+                self.query, self.db.records[alignment.seq_id]
+            )
+            i += 1
+
+    def get_results(self, gapped_alignments: List[Alignment]):
+        """Display the results of the BLAST process.
+
+        Parameters
+        ----------
+        gapped_alignments : List[Alignment]
+            The list of local alignments extended with gaps.
+
+        Notes
+        -----
+        The results are gathered in a text file.
+        """
+        logger.info("Collecting results...")
+        q_len = len(self.query)
+        db_len = sum([len(record.seq) for record in self.db.records])
+        content = "GAPPED BLASTP\n\n\n\n"
+        content += f"Database:  {self.db_fasta}\n{len(self.db.records)} sequences; {db_len} total letters\n\n\n\n"
+        content += f"Query= {self.query.name} {self.query.description}\n\n"
+        content += f"Length={q_len}\n\n"
+        content += "Sequences producing significant alignments:\n\n"
+        for alignment in gapped_alignments:
+            alignment.compute_statistics(q_len, db_len)
+        i = 0
+        best_alignments = Alignment.keep_best_alignments(gapped_alignments)
+        best_alignments.sort(key=lambda x: x.evalue)
+        for alignment in best_alignments:
+            if alignment.evalue > Config.EVALUE or i > Config.NB_RESULTS:
+                break
+            content += f"{self.db.records[alignment.seq_id].name}\tScore={alignment.normalized_score:.1f} bits\tE-value={alignment.evalue:.1e}\n"
+            i += 1
+        content += "\n\n"
+        i = 0
+        for alignment in best_alignments:
+            if alignment.evalue > Config.EVALUE or i > Config.NB_RESULTS:
+                break
+            content += alignment.get_results(
+                self.query, self.db.records[alignment.seq_id]
+            )
+            i += 1
+        with open(self.output, "w") as out:
+            out.write(content)
+
     def run(self):
         """Execute the BLAST process."""
         self.load_data()
@@ -223,6 +311,10 @@ class GappedBlast:
         gapped_alignments = self.parallel_gapped_extension(
             ungapped_alignments
         )
+        if self.output:
+            self.get_results(gapped_alignments)
+        else:
+            self.display_results(gapped_alignments)
 
     def run_with_time(self):
         """Same as run but with time measurement for each step."""
@@ -246,3 +338,7 @@ class GappedBlast:
         )
         end = time.time()
         print("Gapped extension : ", end - start)
+        if self.output:
+            self.get_results(gapped_alignments)
+        else:
+            self.display_results(gapped_alignments)
