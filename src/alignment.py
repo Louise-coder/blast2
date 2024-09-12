@@ -29,8 +29,8 @@ def worker_gapped_extension(hsp: Self) -> Self:
         0,
         1,
     ).needleman_wunsch_local_alignment()
-    sub_a = hsp.seq_a[: seed[0] - 1]
-    sub_b = hsp.seq_b[: seed[1] - 1]
+    sub_a = hsp.seq_a[: seed[0]]
+    sub_b = hsp.seq_b[: seed[1]]
     backward = Alignment(
         sub_a[::-1],
         sub_b[::-1],
@@ -456,8 +456,8 @@ class Alignment:
         Alignment
             The merged alignment.
         """
-        seq_a = other.seq_a[:-1] + self.seq_a
-        seq_b = other.seq_b[:-1] + self.seq_b
+        seq_a = other.seq_a + self.seq_a
+        seq_b = other.seq_b + self.seq_b
         length = other.len + self.len - 1
         res = Alignment(seq_a, seq_b, 0, 0, length)
         res.score = other.score + self.score

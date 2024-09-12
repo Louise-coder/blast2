@@ -169,8 +169,8 @@ class GappedBlast:
                 0,
                 1,
             ).needleman_wunsch_local_alignment()
-            sub_a = hsp.seq_a[: seed[0] - 1]
-            sub_b = hsp.seq_b[: seed[1] - 1]
+            sub_a = hsp.seq_a[: seed[0]]
+            sub_b = hsp.seq_b[: seed[1]]
             backward = Alignment(
                 sub_a[::-1],
                 sub_b[::-1],
