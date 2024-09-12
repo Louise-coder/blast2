@@ -248,7 +248,7 @@ class GappedBlast:
             if alignment.evalue > Config.EVALUE or i > Config.NB_RESULTS:
                 break
             print(
-                f"{self.db.records[alignment.seq_id].name}\tScore={alignment.normalized_score:.1f} bits\tE-value={alignment.evalue:.1e}"
+                f"{self.db.records[alignment.seq_id].name:<30}\tScore={alignment.normalized_score:5.1f} bits\tE-value={alignment.evalue:.1e}"
             )
             i += 1
         print("\n\n")
@@ -291,7 +291,7 @@ class GappedBlast:
         for alignment in best_alignments:
             if alignment.evalue > Config.EVALUE or i > Config.NB_RESULTS:
                 break
-            content += f"{self.db.records[alignment.seq_id].name}\tScore={alignment.normalized_score:.1f} bits\tE-value={alignment.evalue:.1e}\n"
+            content += f"{self.db.records[alignment.seq_id].name:<30}\tScore={alignment.normalized_score:5.1f} bits\tE-value={alignment.evalue:.1e}\n"
             i += 1
         content += "\n\n"
         i = 0

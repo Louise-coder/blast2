@@ -357,8 +357,6 @@ class Alignment:
         a_len, b_len = len(a_seq), len(b_seq)
         gap_opening = Config.GAP_OPENING_PENALTY
         gap_extension = Config.GAP_EXTENSION_PENALTY
-
-        # INITIALIZATION
         F = np.zeros((b_len + 1, a_len + 1))
         M = np.zeros((b_len + 1, a_len + 1))  # top left
         Ix = np.zeros((b_len + 1, a_len + 1))  # left
@@ -550,25 +548,21 @@ class Alignment:
         db_start = str(db_record.seq.strip()).find(
             self.seq_b.replace("-", "").strip()
         )
+        segment_width = 50
         if self.len < 50:
-            print(f"Query:  {q_start}\t{self.seq_a}\t{q_start+50}")
-            print(f"Sbjct:  {db_start}\t{self.seq_b}\t{db_start+50}\n")
+            print(f"Query:  {q_start:5d}\t{self.seq_a:<50}\t{q_start+50}")
+            print(
+                f"Sbjct:  {db_start:5d}\t{self.seq_b:<50}\t{db_start+50}\n"
+            )
         else:
-            total_printed = 0
-            for i in range(0, self.len - 50, 50):
+            total_length = len(self.seq_a)
+            for start in range(0, total_length, segment_width):
+                end = min(start + segment_width, total_length)
                 print(
-                    f"Query:  {q_start+i}\t{self.seq_a[i:i+50]}\t{q_start+i+50}"
+                    f"Query:  {q_start + start + 1:5d} {self.seq_a[start:end]:<50} {q_start + end:5d}"
                 )
                 print(
-                    f"Sbjct:  {db_start+i}\t{self.seq_b[i:i+50]}\t{db_start+i+50}\n"
-                )
-                total_printed += 50
-            if total_printed < self.len:
-                print(
-                    f"Query:  {q_start+total_printed}\t{self.seq_a[total_printed:]}\t{q_start+self.len}"
-                )
-                print(
-                    f"Sbjct:  {db_start+total_printed}\t{self.seq_b[total_printed:]}\t{db_start+self.len}\n"
+                    f"Sbjct:  {db_start + start + 1:5d} {self.seq_b[start:end]:<50} {db_start + end:5d}\n"
                 )
 
     def get_results(self, q_record: Sequence, db_record: Sequence) -> str:
@@ -594,18 +588,15 @@ class Alignment:
         db_start = str(db_record.seq.strip()).find(
             self.seq_b.replace("-", "").strip()
         )
-        if self.len < 50:
-            content += f"Query:  {q_start}\t{self.seq_a}\t{q_start+50}\n"
-            content += (
-                f"Sbjct:  {db_start}\t{self.seq_b}\t{db_start+50}\n\n"
-            )
+        segment_width = 50
+        if self.len <= segment_width:
+            content += f"Query:  {q_start + 1:5d} {self.seq_a} {q_start + self.len:5d}\n"
+            content += f"Sbjct:  {db_start + 1:5d} {self.seq_b} {db_start + self.len:5d}\n\n"
         else:
-            total_printed = 0
-            for i in range(0, self.len - 50, 50):
-                content += f"Query:  {q_start+i}\t{self.seq_a[i:i+50]}\t{q_start+i+50}\n"
-                content += f"Sbjct:  {db_start+i}\t{self.seq_b[i:i+50]}\t{db_start+i+50}\n\n"
-                total_printed += 50
-            if total_printed < self.len:
-                content += f"Query:  {q_start+total_printed}\t{self.seq_a[total_printed:]}\t{q_start+self.len}\n"
-                content += f"Sbjct:  {db_start+total_printed}\t{self.seq_b[total_printed:]}\t{db_start+self.len}\n\n"
+            total_length = len(self.seq_a)
+
+            for start in range(0, total_length, segment_width):
+                end = min(start + segment_width, total_length)
+                content += f"Query:  {q_start + start + 1:5d} {self.seq_a[start:end]:<50} {q_start + end:5d}\n"
+                content += f"Sbjct:  {db_start + start + 1:5d} {self.seq_b[start:end]:<50} {db_start + end:5d}\n\n"
         return content + "\n"
