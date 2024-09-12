@@ -99,7 +99,7 @@ def display_title():
     """Display a welcome message."""
     msg = "WELCOME to your custom BLAST 2 !"
     border_char = "*"
-    border = f"\033[35m{border_char * (len(msg) + 4)}*\033[0m"
+    border = f"\033[35m{border_char * (len(msg) + 3)}*\033[0m"
     print(border)
     print(f"\033[35m* {msg} *\033[0m")
     print(border)
