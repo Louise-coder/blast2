@@ -260,6 +260,8 @@ class GappedBlast:
                 self.query, self.db.records[alignment.seq_id]
             )
             i += 1
+        if not best_alignments:
+            print("***** No hits found *****\n")
 
     def get_results(self, gapped_alignments: List[Alignment]):
         """Display the results of the BLAST process.
@@ -300,6 +302,8 @@ class GappedBlast:
                 self.query, self.db.records[alignment.seq_id]
             )
             i += 1
+        if not best_alignments:
+            content += "***** No hits found *****\n"
         with open(self.output, "w") as out:
             out.write(content)
 
